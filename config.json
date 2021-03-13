@@ -1,0 +1,10 @@
+{
+  "myservice": {
+    "enabled": true,
+    "verbose": true
+  },
+  "webservice": {
+    "enabled": true,
+    "verbose": true
+  }
+}
