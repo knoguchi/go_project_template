@@ -1,4 +1,6 @@
 {
+  "reload": true,
+  "save_on_exit": true,
   "services": {
     "kafka": {
       "name": "KAFKA",

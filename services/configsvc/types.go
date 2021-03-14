@@ -31,38 +31,46 @@ type ConfigSvc struct {
 	MainConfig MainConfig
 }
 
-// MainConfig is the overarching object that holds all the information for
+// MainConfig is the overarching object that holds all the information
+// Golang can marshal Services to JSON, but it can't unmarshal JSON to Services
+// Hence -services.  See _MainConfig for unmarshal
 type MainConfig struct {
 	Reload     bool                               `json:"reload"`
 	SaveOnExit bool                               `json:"save_on_exit"`
-	Services   map[string]services.IServiceConfig `json:"services,omitempty"`
+	Services   map[string]services.IServiceConfig `json:"-services,omitempty"` // can marshal, but can't unmarshal
 }
 
-func (c *MainConfig) UnmarshalJSON(data []byte) error {
+// Rest of the code is for unmarshaling Services
+type _MainConfig struct {
+	Services   map[string]services.IServiceConfig `json:"services,omitempty"`
+}
+func (c *_MainConfig) UnmarshalJSON(data []byte) error {
+	// store into generic object map
 	var objmap map[string]*json.RawMessage
 	if err := json.Unmarshal(data, &objmap); err != nil {
 		return err
 	}
-	var smth map[string]*json.RawMessage
 
-	if err := json.Unmarshal(*objmap["services"], &smth); err != nil {
+	// services needs special handling because unmarshaller can't guess the type
+	var svcs map[string]*json.RawMessage
+	if err := json.Unmarshal(*objmap["services"], &svcs); err != nil {
 		return err
 	}
 	services := map[string]services.IServiceConfig{}
-
-	for k := range smth {
+	for k := range svcs {
 		switch k {
 		case "kafka":
 			x := &kafka.KafkaServiceConfig{}
-			json.Unmarshal(*smth[k], x)
+			json.Unmarshal(*svcs[k], x)
 			services[k] = x
 		case "webservice":
 			y := &webservice.WebServiceConfig{}
-			json.Unmarshal(*smth[k], y)
+			json.Unmarshal(*svcs[k], y)
 			services[k] = y
 		}
 		fmt.Printf("LOOP %#v\n", k)
 	}
 	c.Services = services
+
 	return nil
 }

@@ -66,17 +66,23 @@ func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (err erro
 	}
 	defer confFile.Close()
 	byteValue, _ := ioutil.ReadAll(confFile)
-	result := MainConfig{}
-	result.Services = map[string]services.IServiceConfig{}
-	log.Infof("%v", c.MainConfig)
-	//result.Services = []services.IServiceConfig{}
-	err = json.Unmarshal(byteValue, &c.MainConfig)
-	if err != nil {
+
+	// fill fields except services
+	result := &MainConfig{}
+	if err := json.Unmarshal(byteValue, result); err != nil {
 		return err
 	}
-	log.Infof("%v", result)
-	//// Override values in the current MyServiceConfig
-	//*c.MyServiceConfig = *result
+	// unmarshal services
+	_result := &_MainConfig{}
+	if err := json.Unmarshal(byteValue, _result); err != nil {
+		return err
+	}
+	result.Services = _result.Services
+
+	log.Infof(">>> %#v", result)
+	// Override config.
+	// TODO: graceful reloading
+	c.MainConfig = *result
 	return nil
 }
 
