@@ -39,6 +39,9 @@ func New() *KafkaService {
 }
 
 func (k *KafkaService) Configure() {
+	var cfg *Config
+	k.Registry.FetchService(&cfg)
+	log.Infof("%v", cfg)
 
 }
 func (k *KafkaService) Start(ctx context.Context) error {

@@ -28,7 +28,7 @@ func TestConfigSvc_AddService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if c.Config != nil {
 				t.Error("fail")
@@ -53,7 +53,7 @@ func TestConfigSvc_CheckConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if err := c.CheckConfig(); (err != nil) != tt.wantErr {
 				t.Errorf("CheckConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -83,7 +83,7 @@ func TestConfigSvc_LoadConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if err := c.LoadConfig(tt.args.configPath, tt.args.dryrun); (err != nil) != tt.wantErr {
 				t.Errorf("LoadConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -113,7 +113,7 @@ func TestConfigSvc_ReadConfigFromFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if err := c.ReadConfigFromFile(tt.args.configPath, tt.args.dryrun); (err != nil) != tt.wantErr {
 				t.Errorf("ReadConfigFromFile() error = %v, wantErr %v", err, tt.wantErr)
@@ -142,7 +142,7 @@ func TestConfigSvc_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if err := c.Start(tt.args.ctx); (err != nil) != tt.wantErr {
 				t.Errorf("Start() error = %v, wantErr %v", err, tt.wantErr)
@@ -167,7 +167,7 @@ func TestConfigSvc_Status(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if err := c.Status(); (err != nil) != tt.wantErr {
 				t.Errorf("Status() error = %v, wantErr %v", err, tt.wantErr)
@@ -192,7 +192,7 @@ func TestConfigSvc_Stop(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
 				Service: tt.fields.Service,
-				config:  tt.fields.config,
+				Config:  tt.fields.config,
 			}
 			if err := c.Stop(); (err != nil) != tt.wantErr {
 				t.Errorf("Stop() error = %v, wantErr %v", err, tt.wantErr)

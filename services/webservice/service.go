@@ -56,7 +56,7 @@ func (ws *WebService) Start(ctx context.Context) error {
 }
 
 func (ws *WebService) GetName() string {
-	return "REST API"
+	return "webservice"
 }
 
 func (ws *WebService) Stop() error {

@@ -4,14 +4,15 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/knoguchi/go_project_template/services"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
 func New() *ConfigSvc {
 	cfg := &ConfigSvc{}
+	cfg.Config.Services = map[string]services.IServiceConfig{}
 	return cfg
 }
 
@@ -30,8 +31,12 @@ func (c *ConfigSvc) Stop() error {
 	return nil
 }
 
+/* The purpose of this function is to build a tree of config structs
+Then let json.Marshal to populate
+ */
 func (c *ConfigSvc) AddServiceConfig(cfg services.IServiceConfig) {
-	c.config.Services = append(c.config.Services, cfg)
+	key := cfg.GetName()
+	c.Config.Services[key] = cfg
 }
 
 // ReadConfig verifies and checks for encryption and loads the config from a JSON object.
@@ -60,17 +65,19 @@ func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (err erro
 		return err
 	}
 	defer confFile.Close()
-
-	reader := bufio.NewReader(confFile)
-	decoder := json.NewDecoder(reader)
-	result := &Config{}
-	err = decoder.Decode(c)
+	byteValue, _ := ioutil.ReadAll(confFile)
+	result := Config{}
+	result.Services = map[string]services.IServiceConfig{}
+	log.Info("%s", string(byteValue))
+	log.Infof("%v", c.Config)
+	//result.Services = []services.IServiceConfig{}
+	err = json.Unmarshal(byteValue, &c.Config)
 	if err != nil {
-		return fmt.Errorf("error reading config %w", err)
+		return err
 	}
-
-	// Override values in the current config
-	*c.Config = *result
+	log.Infof("%v", result)
+	//// Override values in the current Config
+	//*c.Config = *result
 	return nil
 }
 

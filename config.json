@@ -1,10 +1,18 @@
 {
-  "myservice": {
-    "enabled": true,
-    "verbose": true
-  },
-  "webservice": {
-    "enabled": true,
-    "verbose": true
+  "services": {
+    "kafka": {
+      "name": "KAFKA",
+      "broker": "aaaa"
+    },
+    "myservice": {
+      "name": "MY",
+      "enabled": true,
+      "verbose": true
+    },
+    "webservice": {
+      "name": "WEB",
+      "enabled": true,
+      "verbose": true
+    }
   }
 }

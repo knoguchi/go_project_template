@@ -7,12 +7,17 @@ import (
 )
 
 type IServiceConfig interface {
+	GetName() string
 }
 
 type ServiceConfig struct {
 	Name    string `json:"name"`
 	Enabled bool   `json:"enabled"`
 	Verbose bool   `json:"verbose"`
+}
+
+func (sc *ServiceConfig) GetName() string {
+	return sc.Name
 }
 
 // IService is a struct that can be registered into a ServiceRegistry for
@@ -26,7 +31,7 @@ type IService interface {
 	// Status Returns error if the services is not considered healthy.
 	Status() error
 	SetRegistry(registry *ServiceRegistry)
-	GetConfigType() IServiceConfig
+	GetServiceConfig() IServiceConfig
 	Configure()
 }
 
@@ -40,8 +45,8 @@ func (s *Service) SetRegistry(registry *ServiceRegistry) {
 	s.Registry = registry
 }
 
-func (s *Service) GetConfigType() IServiceConfig {
-	return reflect.TypeOf(s.Config)
+func (s *Service) GetServiceConfig() IServiceConfig {
+	return *s.Config
 }
 
 // ServiceRegistry provides a useful pattern for managing services.

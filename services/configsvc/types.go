@@ -1,9 +1,12 @@
 package configsvc
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/knoguchi/go_project_template/services"
+	"github.com/knoguchi/go_project_template/services/kafka"
+	"github.com/knoguchi/go_project_template/services/webservice"
 )
-
 
 // Constants here hold some messages
 const (
@@ -25,12 +28,42 @@ const (
 
 type ConfigSvc struct {
 	services.Service
-	config Config
+	Config Config
 }
 
 // Config is the overarching object that holds all the information for
 type Config struct {
-	Reload     bool                      `json:"reload"`
-	SaveOnExit bool                      `json:"save_on_exit"`
-	Services   []services.IServiceConfig `json:"services,omitempty"`
+	Reload     bool                               `json:"reload"`
+	SaveOnExit bool                               `json:"save_on_exit"`
+	Services   map[string]services.IServiceConfig `json:"services,omitempty"`
+}
+
+
+func (c *Config) UnmarshalJSON(data []byte) error {
+	var objmap map[string]*json.RawMessage
+	if err := json.Unmarshal(data, &objmap); err != nil {
+		return err
+	}
+	var smth map[string]*json.RawMessage
+
+	if err := json.Unmarshal(*objmap["services"], &smth); err != nil {
+		return err
+	}
+	services := map[string]services.IServiceConfig{}
+
+	for k := range smth {
+		switch k {
+		case "kafka":
+			x := &kafka.Config{}
+			json.Unmarshal(*smth[k], x)
+			services[k] = x
+		case "webservice":
+			y := &webservice.Config{}
+			json.Unmarshal(*smth[k], y)
+			services[k] = y
+		}
+		fmt.Printf("LOOP %#v\n", k)
+	}
+	c.Services = services
+	return nil
 }
