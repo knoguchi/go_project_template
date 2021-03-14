@@ -12,7 +12,7 @@ import (
 
 func New() *ConfigSvc {
 	cfg := &ConfigSvc{}
-	cfg.Config.Services = map[string]services.IServiceConfig{}
+	cfg.MainConfig.Services = map[string]services.IServiceConfig{}
 	return cfg
 }
 
@@ -36,18 +36,18 @@ Then let json.Marshal to populate
  */
 func (c *ConfigSvc) AddServiceConfig(cfg services.IServiceConfig) {
 	key := cfg.GetName()
-	c.Config.Services[key] = cfg
+	c.MainConfig.Services[key] = cfg
 }
 
 // ReadConfig verifies and checks for encryption and loads the config from a JSON object.
 // Prompts for decryption key, if target data is encrypted.
 // Returns the loaded configuration and whether it was encrypted.
-func ReadConfig(configReader io.Reader) (*Config, error) {
+func ReadConfig(configReader io.Reader) (*MainConfig, error) {
 	reader := bufio.NewReader(configReader)
 
 	// Read unencrypted configuration
 	decoder := json.NewDecoder(reader)
-	c := &Config{}
+	c := &MainConfig{}
 	err := decoder.Decode(c)
 	return c, err
 }
@@ -66,18 +66,17 @@ func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (err erro
 	}
 	defer confFile.Close()
 	byteValue, _ := ioutil.ReadAll(confFile)
-	result := Config{}
+	result := MainConfig{}
 	result.Services = map[string]services.IServiceConfig{}
-	log.Info("%s", string(byteValue))
-	log.Infof("%v", c.Config)
+	log.Infof("%v", c.MainConfig)
 	//result.Services = []services.IServiceConfig{}
-	err = json.Unmarshal(byteValue, &c.Config)
+	err = json.Unmarshal(byteValue, &c.MainConfig)
 	if err != nil {
 		return err
 	}
 	log.Infof("%v", result)
-	//// Override values in the current Config
-	//*c.Config = *result
+	//// Override values in the current MyServiceConfig
+	//*c.MyServiceConfig = *result
 	return nil
 }
 

@@ -11,7 +11,7 @@ import (
 func TestConfigSvc_AddService(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	type args struct {
 		svc services.IService
@@ -27,10 +27,10 @@ func TestConfigSvc_AddService(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
-			if c.Config != nil {
+			if len(c.MainConfig.Services) != 1{
 				t.Error("fail")
 			}
 		})
@@ -40,7 +40,7 @@ func TestConfigSvc_AddService(t *testing.T) {
 func TestConfigSvc_CheckConfig(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	tests := []struct {
 		name    string
@@ -52,8 +52,8 @@ func TestConfigSvc_CheckConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
 			if err := c.CheckConfig(); (err != nil) != tt.wantErr {
 				t.Errorf("CheckConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -65,7 +65,7 @@ func TestConfigSvc_CheckConfig(t *testing.T) {
 func TestConfigSvc_LoadConfig(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	type args struct {
 		configPath string
@@ -82,8 +82,8 @@ func TestConfigSvc_LoadConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
 			if err := c.LoadConfig(tt.args.configPath, tt.args.dryrun); (err != nil) != tt.wantErr {
 				t.Errorf("LoadConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -95,7 +95,7 @@ func TestConfigSvc_LoadConfig(t *testing.T) {
 func TestConfigSvc_ReadConfigFromFile(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	type args struct {
 		configPath string
@@ -112,8 +112,8 @@ func TestConfigSvc_ReadConfigFromFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
 			if err := c.ReadConfigFromFile(tt.args.configPath, tt.args.dryrun); (err != nil) != tt.wantErr {
 				t.Errorf("ReadConfigFromFile() error = %v, wantErr %v", err, tt.wantErr)
@@ -125,7 +125,7 @@ func TestConfigSvc_ReadConfigFromFile(t *testing.T) {
 func TestConfigSvc_Start(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	type args struct {
 		ctx context.Context
@@ -141,8 +141,8 @@ func TestConfigSvc_Start(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
 			if err := c.Start(tt.args.ctx); (err != nil) != tt.wantErr {
 				t.Errorf("Start() error = %v, wantErr %v", err, tt.wantErr)
@@ -154,7 +154,7 @@ func TestConfigSvc_Start(t *testing.T) {
 func TestConfigSvc_Status(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	tests := []struct {
 		name    string
@@ -166,8 +166,8 @@ func TestConfigSvc_Status(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
 			if err := c.Status(); (err != nil) != tt.wantErr {
 				t.Errorf("Status() error = %v, wantErr %v", err, tt.wantErr)
@@ -179,7 +179,7 @@ func TestConfigSvc_Status(t *testing.T) {
 func TestConfigSvc_Stop(t *testing.T) {
 	type fields struct {
 		Service services.Service
-		config  Config
+		config  MainConfig
 	}
 	tests := []struct {
 		name    string
@@ -191,8 +191,8 @@ func TestConfigSvc_Stop(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigSvc{
-				Service: tt.fields.Service,
-				Config:  tt.fields.config,
+				Service:    tt.fields.Service,
+				MainConfig: tt.fields.config,
 			}
 			if err := c.Stop(); (err != nil) != tt.wantErr {
 				t.Errorf("Stop() error = %v, wantErr %v", err, tt.wantErr)
@@ -224,7 +224,7 @@ func TestReadConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Config
+		want    *MainConfig
 		wantErr bool
 	}{
 		// TODO: Add test cases.

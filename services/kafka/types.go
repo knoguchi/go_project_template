@@ -2,7 +2,7 @@ package kafka
 
 import "github.com/knoguchi/go_project_template/services"
 
-type Config struct {
+type KafkaServiceConfig struct {
 	services.ServiceConfig
 	Brokers  []string       `json:"brokers"`
 	TLS      bool           `json:"tls"`

@@ -13,7 +13,7 @@ type DummyConfig struct {
 }
 
 func TestConfig(t *testing.T) {
-	cfg := Config{}
+	cfg := MainConfig{}
 	j, err := json.Marshal(cfg)
 	if err != nil {
 		t.Errorf("can't marshal %v", err)
@@ -24,7 +24,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestConfigSvc_AddServiceConfig(t *testing.T) {
-	cfg := Config{
+	cfg := MainConfig{
 		Reload: true,
 		SaveOnExit: false,
 	}
@@ -32,7 +32,7 @@ func TestConfigSvc_AddServiceConfig(t *testing.T) {
 		MyField: "foo",
 		MyValue: 1.23,
 	}
-	cfg.Services = append(cfg.Services, dummy)
+	cfg.Services["dummy"] = dummy
 
 	j, err := json.Marshal(cfg)
 	if err != nil {

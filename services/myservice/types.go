@@ -8,13 +8,13 @@ import (
 // Instance holds all information for a services instance
 type Instance struct {
 	//DB       *services
-	Config    *Config
-	Connected bool
-	Mu        sync.RWMutex
+	MyServiceConfig *MyServiceConfig
+	Connected       bool
+	Mu              sync.RWMutex
 }
 
-// Config holds all services configurable options including enable/disabled & settings
-type Config struct {
+// MyServiceConfig holds all services configurable options including enable/disabled & settings
+type MyServiceConfig struct {
 	services.ServiceConfig
 	Interval int
 }

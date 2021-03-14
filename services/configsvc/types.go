@@ -28,18 +28,17 @@ const (
 
 type ConfigSvc struct {
 	services.Service
-	Config Config
+	MainConfig MainConfig
 }
 
-// Config is the overarching object that holds all the information for
-type Config struct {
+// MainConfig is the overarching object that holds all the information for
+type MainConfig struct {
 	Reload     bool                               `json:"reload"`
 	SaveOnExit bool                               `json:"save_on_exit"`
 	Services   map[string]services.IServiceConfig `json:"services,omitempty"`
 }
 
-
-func (c *Config) UnmarshalJSON(data []byte) error {
+func (c *MainConfig) UnmarshalJSON(data []byte) error {
 	var objmap map[string]*json.RawMessage
 	if err := json.Unmarshal(data, &objmap); err != nil {
 		return err
@@ -54,11 +53,11 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 	for k := range smth {
 		switch k {
 		case "kafka":
-			x := &kafka.Config{}
+			x := &kafka.KafkaServiceConfig{}
 			json.Unmarshal(*smth[k], x)
 			services[k] = x
 		case "webservice":
-			y := &webservice.Config{}
+			y := &webservice.WebServiceConfig{}
 			json.Unmarshal(*smth[k], y)
 			services[k] = y
 		}

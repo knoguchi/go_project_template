@@ -39,7 +39,7 @@ func New() *KafkaService {
 }
 
 func (k *KafkaService) Configure() {
-	var cfg *Config
+	var cfg *KafkaServiceConfig
 	k.Registry.FetchService(&cfg)
 	log.Infof("%v", cfg)
 
