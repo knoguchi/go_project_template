@@ -74,10 +74,10 @@ func (s *ServiceRegistry) ConfigureAll() {
 }
 
 // StartAll initialized each services in order of registration.
-func (s *ServiceRegistry) StartAll(ctx context.Context) {
+func (s *ServiceRegistry) StartAll(ctx context.Context)  {
 	log.Infof("Starting %d services: %v", len(s.serviceTypes), s.serviceTypes)
 	for _, kind := range s.serviceTypes {
-		log.Debugf("Starting services type %v", kind)
+		log.Infof("Starting services type %v", kind)
 		go s.services[kind].Start(ctx)
 	}
 }

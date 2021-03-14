@@ -3,6 +3,7 @@ package configsvc
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/knoguchi/go_project_template/services"
 	"github.com/knoguchi/go_project_template/services/kafka"
 	"github.com/knoguchi/go_project_template/services/webservice"
@@ -28,7 +29,9 @@ const (
 
 type ConfigSvc struct {
 	services.Service
-	MainConfig MainConfig
+	MainConfig *MainConfig
+	FsWatcher  *fsnotify.Watcher
+	ChangeCh   chan string
 }
 
 // MainConfig is the overarching object that holds all the information
@@ -42,8 +45,9 @@ type MainConfig struct {
 
 // Rest of the code is for unmarshaling Services
 type _MainConfig struct {
-	Services   map[string]services.IServiceConfig `json:"services,omitempty"`
+	Services map[string]services.IServiceConfig `json:"services,omitempty"`
 }
+
 func (c *_MainConfig) UnmarshalJSON(data []byte) error {
 	// store into generic object map
 	var objmap map[string]*json.RawMessage
