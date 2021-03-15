@@ -16,5 +16,5 @@ type Instance struct {
 // MyServiceConfig holds all services configurable options including enable/disabled & settings
 type MyServiceConfig struct {
 	services.ServiceConfig
-	Interval int
+	Interval int `json:"interval"`
 }

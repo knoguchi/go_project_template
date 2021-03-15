@@ -49,6 +49,22 @@ func (k *KafkaService) Configure() {
 }
 func (k *KafkaService) Start(ctx context.Context) error {
 	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		for {
+			select {
+			case newCfg := <-k.ConfigChange:
+				log.Infof("got config change notification: %v", newCfg)
+				k.Config = &newCfg
+				k.MarkConfigTimestamp()
+			case <-gctx.Done():
+				log.Info("kafka shutting down")
+				return gctx.Err()
+			}
+		}
+	})
+
+
 	if k.Verbose {
 		sarama.Logger = log
 	}

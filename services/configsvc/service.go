@@ -54,6 +54,7 @@ func (c *ConfigSvc) Start(ctx context.Context) error {
 						// config json is good
 						for key := range newCfg.Services {
 							currentCfg := c.Registry.GetCurrentConfig(key)
+							//log.Infof("Checking config for [%s]", key)
 							if diff := cmp.Diff(currentCfg, newCfg.Services[key]); diff != "" {
 								log.Infof("Config for [%s] has changed", key)
 								log.Infof("Current config: %#v", currentCfg)

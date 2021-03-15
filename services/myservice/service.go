@@ -110,7 +110,7 @@ func (a *MyService) checkConnection() {
 	//	x.Connected = false
 	//	return
 	//}
-	log.Info("ok!")
+	//log.Info("ok!")
 	//if !x.Connected {
 	//	log.Info("connection reestablished")
 	//	x.Connected = true

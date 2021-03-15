@@ -8,12 +8,22 @@
     },
     "kafka": {
       "name": "Kafka service",
-      "broker": "aaaa"
+      "enabled": true,
+      "verbose": true,
+      "brokers": ["localhost:9093"],
+      "tls": false,
+      "consumer": {
+        "topics": [
+          "test"
+        ],
+        "group": "dev"
+      }
     },
     "myservice": {
       "name": "My service",
       "enabled": true,
-      "verbose": true
+      "verbose": true,
+      "interval": 4
     },
     "webservice": {
       "name": "Web service",

@@ -17,13 +17,11 @@ func handleRoot(c *gin.Context) {
 		panic(err)
 	}
 
-	count := mysvc.GetCount()
-
 	c.JSON(
 		http.StatusOK,
 		gin.H{
 			"code":  http.StatusOK,
-			"error": "Welcome server 01 " + fmt.Sprintf("%d", count),
+			"error": "Welcome server 01 " + fmt.Sprintf("%#v", mysvc.Config),
 		},
 	)
 }

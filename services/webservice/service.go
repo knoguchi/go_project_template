@@ -40,10 +40,6 @@ func (ws *WebService) Start(ctx context.Context) error {
 	})
 
 	g.Go(func() error {
-		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Printf("listen: %s\n", err)
-			//ws.ErrCh <- err
-		}
 		for {
 			select {
 			case newCfg := <-ws.ConfigChange:
