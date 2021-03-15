@@ -8,7 +8,7 @@ import (
 )
 
 type IServiceConfig interface {
-	//GetName() string
+	GetXXX() string
 }
 
 type ServiceConfig struct {
@@ -17,9 +17,9 @@ type ServiceConfig struct {
 	Verbose bool   `json:"verbose"`
 }
 
-//func (sc *ServiceConfig) GetName() string {
-//	return sc.Name
-//}
+func (sc *ServiceConfig) GetXXX() string {
+	return sc.Name
+}
 
 // IService is a struct that can be registered into a ServiceRegistry for
 // easy dependency management.
@@ -56,6 +56,7 @@ func (s *Service) GetServiceConfig() IServiceConfig {
 	if s.Config != nil {
 		return *s.Config
 	}
+	log.Error("Config should never be nil")
 	return nil
 }
 
@@ -94,8 +95,8 @@ func NewServiceRegistry() *ServiceRegistry {
 func (s *ServiceRegistry) ConfigureAll() {
 	log.Infof("Configuring %d services: %v", len(s.serviceTypes), s.serviceTypes)
 	for _, kind := range s.serviceTypes {
-		log.Debugf("Configure services type %v", kind)
-		go s.services[kind].Configure()
+		log.Debugf("TODO Configure services type %v", kind)
+		//go s.services[kind].Configure()
 	}
 }
 
@@ -168,4 +169,11 @@ func (s *ServiceRegistry) NotifyConfigChange(key string, cfg IServiceConfig) err
 		return nil
 	}
 	return fmt.Errorf("unknown service key: %s", key)
+}
+
+func (s *ServiceRegistry) GetCurrentConfig(key string) IServiceConfig {
+	if running, ok := s.servicesByKey[key]; ok {
+		return (*running).GetServiceConfig()
+	}
+	return nil
 }

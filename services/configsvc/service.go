@@ -16,8 +16,8 @@ func New() *ConfigSvc {
 	cfg := &ConfigSvc{}
 	cfg.ConfigChange = make(chan services.IServiceConfig)
 	cfg.Key = "config"
-	cfg.MainConfig = &MainConfig{}
-	cfg.MainConfig.Services = map[string]services.IServiceConfig{}
+	cfg.JConfig = &JsonConfig{}
+	cfg.JConfig.Services = map[string]services.IServiceConfig{}
 	return cfg
 }
 
@@ -54,9 +54,13 @@ func (c *ConfigSvc) Start(ctx context.Context) error {
 					} else {
 						// config json is good
 						for key := range newCfg.Services {
-							if diff := cmp.Diff(c.MainConfig.Services[key], newCfg.Services[key]); diff != "" {
+							currentCfg := c.Registry.GetCurrentConfig(key)
+							if key == "webservice" {
+								log.Infof("Current config: %#v", currentCfg)
+								log.Infof("New     config: %#v", newCfg.Services[key])
+							}
+							if diff := cmp.Diff(currentCfg, newCfg.Services[key]); diff != "" {
 								log.Infof("Config for [%s] has changed: %s", key, diff)
-								c.MainConfig = newCfg
 								c.Registry.NotifyConfigChange(key, newCfg.Services[key])
 							}
 						}
@@ -93,18 +97,18 @@ Then let json.Marshal to populate
 */
 func (c *ConfigSvc) AddService(svc services.IService) {
 	svcCfg := svc.GetServiceConfig()
-	c.MainConfig.Services[svc.GetKey()] = svcCfg
+	c.JConfig.Services[svc.GetKey()] = svcCfg
 }
 
 // ReadConfig verifies and checks for encryption and loads the config from a JSON object.
 // Prompts for decryption key, if target data is encrypted.
 // Returns the loaded configuration and whether it was encrypted.
-func ReadConfig(configReader io.Reader) (*MainConfig, error) {
+func ReadConfig(configReader io.Reader) (*JsonConfig, error) {
 	reader := bufio.NewReader(configReader)
 
 	// Read unencrypted configuration
 	decoder := json.NewDecoder(reader)
-	c := &MainConfig{}
+	c := &JsonConfig{}
 	err := decoder.Decode(c)
 	return c, err
 }
@@ -112,7 +116,7 @@ func ReadConfig(configReader io.Reader) (*MainConfig, error) {
 // ReadConfigFromFile reads the configuration from the given file
 // if target file is encrypted, prompts for encryption key
 // Also - if not in dryrun mode - it checks if the configuration needs to be encrypted
-func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (cfg *MainConfig, err error) {
+func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (cfg *JsonConfig, err error) {
 	//defaultPath, _, err := GetFilePath(configPath)
 	//if err != nil {
 	//	return err
@@ -125,12 +129,12 @@ func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (cfg *Mai
 	byteValue, _ := ioutil.ReadAll(confFile)
 
 	// fill fields except services
-	result := &MainConfig{}
+	result := &JsonConfig{}
 	if err := json.Unmarshal(byteValue, result); err != nil {
 		return nil, err
 	}
 	// unmarshal services
-	_result := &_MainConfig{}
+	_result := &_JsonConfig{}
 	if err := json.Unmarshal(byteValue, _result); err != nil {
 		return nil, err
 	}
@@ -145,7 +149,7 @@ func (c *ConfigSvc) LoadConfig(configPath string, dryrun bool) error {
 		log.Errorf(ErrFailureOpeningConfig, configPath, err)
 		return err
 	}
-	c.MainConfig = cfg
+	c.JConfig = cfg
 	return nil
 }
 

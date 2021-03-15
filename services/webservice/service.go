@@ -40,6 +40,7 @@ func (ws *WebService) Start(ctx context.Context) error {
 		select {
 		case newCfg := <-ws.ConfigChange:
 			log.Infof("got config change notification: %v", newCfg)
+			ws.Config = &newCfg
 			ws.MarkConfigTimestamp()
 		case <-ctx.Done():
 			log.Info("webservice shutting down")
