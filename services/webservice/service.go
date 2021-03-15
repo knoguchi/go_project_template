@@ -5,16 +5,16 @@ import (
 	"errors"
 	"github.com/knoguchi/go_project_template/services"
 	"net/http"
-	"time"
 )
 
 type WebService struct {
 	services.Service
-	srv *http.Server
 }
 
 func New() *WebService {
 	s := &WebService{}
+	s.ConfigChange = make(chan services.IServiceConfig, 100)
+	s.Key = "webservice"
 	return s
 }
 
@@ -23,41 +23,40 @@ func (ws *WebService) Configure() {
 }
 
 func (ws *WebService) Start(ctx context.Context) error {
-	ws.srv = &http.Server{
+	log.Infof("%p start", ws.ConfigChange)
+	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: router01(ws.Registry),
 	}
 
 	go func() {
-		if err := ws.srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Printf("listen: %s\n", err)
 			//ws.ErrCh <- err
 		}
-
-		// allow 5sec for http server to shutdown
-		srvCtx, srvCancel := context.WithTimeout(ctx, 5*time.Second)
-		defer srvCancel()
-		for {
-			select {
-			case <-ctx.Done():
-				log.Info("webservice shutting down")
-				if err := ws.srv.Shutdown(srvCtx); err != nil {
-					log.Fatal("Server forced to shutdown:", err)
-					//ws.ErrCh <- err
-				}
-				break
-			}
-		}
-		log.Info("webservice stopped")
 	}()
 
+	for {
+		select {
+		case newCfg := <-ws.ConfigChange:
+			log.Infof("got config change notification: %v", newCfg)
+			ws.MarkConfigTimestamp()
+		case <-ctx.Done():
+			log.Info("webservice shutting down")
+			if err := srv.Shutdown(ctx); err != nil {
+				log.Fatal("Server forced to shutdown:", err)
+				//ws.ErrCh <- err
+			}
+			break
+		}
+	}
 	log.Info("webservice started")
 	return nil
 }
 
-func (ws *WebService) GetName() string {
-	return "webservice"
-}
+//func (ws *WebService) GetName() string {
+//	return "webservice"
+//}
 
 func (ws *WebService) Stop() error {
 	return nil

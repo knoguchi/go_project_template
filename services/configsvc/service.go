@@ -14,6 +14,8 @@ import (
 
 func New() *ConfigSvc {
 	cfg := &ConfigSvc{}
+	cfg.ConfigChange = make(chan services.IServiceConfig)
+	cfg.Key = "config"
 	cfg.MainConfig = &MainConfig{}
 	cfg.MainConfig.Services = map[string]services.IServiceConfig{}
 	return cfg
@@ -42,20 +44,20 @@ func (c *ConfigSvc) Start(ctx context.Context) error {
 				if !ok {
 					return
 				}
-				log.Println("event:", event)
+				//log.Println("event:", event)
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("modified file:", event.Name)
+					//log.Println("modified file:", event.Name)
 					newCfg, err := c.ReadConfigFromFile(c.GetConfigFilePath(), false)
 					if err != nil {
 						log.Error("can't read config file.  ignoring")
 						// c.Status = "WARNING"
 					} else {
 						// config json is good
-						for svc := range newCfg.Services {
-							if diff := cmp.Diff(c.MainConfig.Services[svc], newCfg.Services[svc]); diff != "" {
-								log.Infof("Config for [%s] has changed: %s", svc, diff)
+						for key := range newCfg.Services {
+							if diff := cmp.Diff(c.MainConfig.Services[key], newCfg.Services[key]); diff != "" {
+								log.Infof("Config for [%s] has changed: %s", key, diff)
 								c.MainConfig = newCfg
-								c.ChangeCh <- diff
+								c.Registry.NotifyConfigChange(key, newCfg.Services[key])
 							}
 						}
 					}
@@ -89,9 +91,9 @@ func (c *ConfigSvc) Stop() error {
 /* The purpose of this function is to build a tree of config structs
 Then let json.Marshal to populate
 */
-func (c *ConfigSvc) AddServiceConfig(cfg services.IServiceConfig) {
-	key := cfg.GetName()
-	c.MainConfig.Services[key] = cfg
+func (c *ConfigSvc) AddService(svc services.IService) {
+	svcCfg := svc.GetServiceConfig()
+	c.MainConfig.Services[svc.GetKey()] = svcCfg
 }
 
 // ReadConfig verifies and checks for encryption and loads the config from a JSON object.

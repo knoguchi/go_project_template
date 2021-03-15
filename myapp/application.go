@@ -98,13 +98,14 @@ func (app *Application) registerServices() (err error) {
 	if err != nil {
 		return
 	}
+	cfgsvc.AddService(cfgsvc)
 
 	websvc := webservice.New()
 	err = app.registry.RegisterService(websvc)
 	if err != nil {
 		return
 	}
-	cfgsvc.AddServiceConfig(websvc)
+	cfgsvc.AddService(websvc)
 
 	//mysvc := myservice.New()
 	//err = app.registry.RegisterService(mysvc)

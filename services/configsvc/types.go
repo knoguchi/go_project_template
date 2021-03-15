@@ -2,7 +2,6 @@ package configsvc
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/knoguchi/go_project_template/services"
 	"github.com/knoguchi/go_project_template/services/kafka"
@@ -31,7 +30,6 @@ type ConfigSvc struct {
 	services.Service
 	MainConfig *MainConfig
 	FsWatcher  *fsnotify.Watcher
-	ChangeCh   chan string
 }
 
 // MainConfig is the overarching object that holds all the information
@@ -72,7 +70,6 @@ func (c *_MainConfig) UnmarshalJSON(data []byte) error {
 			json.Unmarshal(*svcs[k], y)
 			services[k] = y
 		}
-		fmt.Printf("LOOP %#v\n", k)
 	}
 	c.Services = services
 

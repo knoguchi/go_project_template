@@ -34,14 +34,16 @@ func New() *KafkaService {
 		Version:   "2.1.1",
 		Assignor:  "roundrobin",
 	}
-
+	svc.Key = "kafka"
+	svc.ConfigChange = make(chan services.IServiceConfig)
 	return svc
 }
 
 func (k *KafkaService) Configure() {
-	var cfg *KafkaServiceConfig
-	k.Registry.FetchService(&cfg)
-	log.Infof("%v", cfg)
+
+	//var cfg *KafkaServiceConfig
+	//k.Registry.FetchService(&cfg)
+	//log.Infof("%v", cfg)
 
 }
 func (k *KafkaService) Start(ctx context.Context) error {

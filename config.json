@@ -2,17 +2,21 @@
   "reload": true,
   "save_on_exit": true,
   "services": {
+    "config": {
+      "name": "Configuration service",
+      "refresh": 50
+    },
     "kafka": {
-      "name": "KAFKA",
+      "name": "Kafka service",
       "broker": "aaaa"
     },
     "myservice": {
-      "name": "MY",
+      "name": "My service",
       "enabled": true,
       "verbose": true
     },
     "webservice": {
-      "name": "WEB",
+      "name": "Web service",
       "enabled": true,
       "verbose": true
     }

@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 type IServiceConfig interface {
-	GetName() string
+	//GetName() string
 }
 
 type ServiceConfig struct {
@@ -16,9 +17,9 @@ type ServiceConfig struct {
 	Verbose bool   `json:"verbose"`
 }
 
-func (sc *ServiceConfig) GetName() string {
-	return sc.Name
-}
+//func (sc *ServiceConfig) GetName() string {
+//	return sc.Name
+//}
 
 // IService is a struct that can be registered into a ServiceRegistry for
 // easy dependency management.
@@ -33,12 +34,18 @@ type IService interface {
 	SetRegistry(registry *ServiceRegistry)
 	GetServiceConfig() IServiceConfig
 	Configure()
+	MarkConfigTimestamp()
+	GetKey() string
+	ChangeConfig(config IServiceConfig)
 }
 
 type Service struct {
-	Registry *ServiceRegistry
-	Verbose  bool
-	Config   *IServiceConfig
+	Key             string
+	Registry        *ServiceRegistry
+	Verbose         bool
+	Config          *IServiceConfig
+	ConfigChange    chan IServiceConfig
+	ConfigTimestamp time.Time
 }
 
 func (s *Service) SetRegistry(registry *ServiceRegistry) {
@@ -46,21 +53,40 @@ func (s *Service) SetRegistry(registry *ServiceRegistry) {
 }
 
 func (s *Service) GetServiceConfig() IServiceConfig {
-	return *s.Config
+	if s.Config != nil {
+		return *s.Config
+	}
+	return nil
+}
+
+func (s *Service) GetKey() string {
+	return s.Key
+}
+
+func (s *Service) ChangeConfig(config IServiceConfig) {
+	log.Infof("%p %s: pushing new config to channel: %#v", s.ConfigChange, s.Key, config)
+	s.ConfigChange <- config
+	log.Infof("pushed")
+}
+
+func (s *Service) MarkConfigTimestamp() {
+	s.ConfigTimestamp = time.Now()
 }
 
 // ServiceRegistry provides a useful pattern for managing services.
 // It allows for ease of dependency management and ensures services
 // dependent on others use the same references in memory.
 type ServiceRegistry struct {
-	services     map[reflect.Type]IService // map of types to services.
-	serviceTypes []reflect.Type            // keep an ordered slice of registered services types.
+	services      map[reflect.Type]IService // map of types to services.
+	servicesByKey map[string]*IService      // map of keys to services
+	serviceTypes  []reflect.Type            // keep an ordered slice of registered services types.
 }
 
 // NewServiceRegistry starts a registry instance for convenience
 func NewServiceRegistry() *ServiceRegistry {
 	return &ServiceRegistry{
-		services: make(map[reflect.Type]IService),
+		services:      make(map[reflect.Type]IService),
+		servicesByKey: make(map[string]*IService),
 	}
 }
 
@@ -74,7 +100,7 @@ func (s *ServiceRegistry) ConfigureAll() {
 }
 
 // StartAll initialized each services in order of registration.
-func (s *ServiceRegistry) StartAll(ctx context.Context)  {
+func (s *ServiceRegistry) StartAll(ctx context.Context) {
 	log.Infof("Starting %d services: %v", len(s.serviceTypes), s.serviceTypes)
 	for _, kind := range s.serviceTypes {
 		log.Infof("Starting services type %v", kind)
@@ -115,6 +141,7 @@ func (s *ServiceRegistry) RegisterService(service IService) error {
 		return fmt.Errorf("services already exists: %v", kind)
 	}
 	s.services[kind] = service
+	s.servicesByKey[service.GetKey()] = &service
 	s.serviceTypes = append(s.serviceTypes, kind)
 	log.Infof("Registered %s", kind.String())
 	return nil
@@ -133,4 +160,12 @@ func (s *ServiceRegistry) FetchService(service interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("unknown services: %T", service)
+}
+
+func (s *ServiceRegistry) NotifyConfigChange(key string, cfg IServiceConfig) error {
+	if running, ok := s.servicesByKey[key]; ok {
+		(*running).ChangeConfig(cfg)
+		return nil
+	}
+	return fmt.Errorf("unknown service key: %s", key)
 }
