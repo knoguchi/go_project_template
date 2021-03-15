@@ -32,6 +32,10 @@ type ConfigSvc struct {
 	FsWatcher *fsnotify.Watcher
 }
 
+type ConfigSvcConfig struct {
+	services.ServiceConfig
+}
+
 // JsonConfig is the overarching object that holds all the information
 // Golang can marshal Services to JSON, but it can't unmarshal JSON to Services
 // Hence -services.  See _MainConfig for unmarshal
@@ -63,11 +67,15 @@ func (c *_JsonConfig) UnmarshalJSON(data []byte) error {
 		switch key {
 		case "kafka":
 			sc := &kafka.KafkaServiceConfig{}
-			json.Unmarshal(*svcs[key], sc)
+			if err := json.Unmarshal(*svcs[key], sc); err != nil {
+				return err
+			}
 			svcConfigs[key] = sc
 		case "webservice":
 			sc := &webservice.WebServiceConfig{}
-			json.Unmarshal(*svcs[key], sc)
+			if err := json.Unmarshal(*svcs[key], sc); err != nil {
+				return err
+			}
 			svcConfigs[key] = sc
 		}
 	}

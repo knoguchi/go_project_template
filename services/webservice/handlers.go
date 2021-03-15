@@ -13,6 +13,7 @@ var registry *services.ServiceRegistry
 func handleRoot(c *gin.Context) {
 	var mysvc *myservice.MyService
 	if err := registry.FetchService(&mysvc); err != nil {
+		log.Errorf("%T is not found in registry.  Make sure it's enabled", mysvc)
 		panic(err)
 	}
 

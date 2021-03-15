@@ -1,85 +1,19 @@
+// https://github.com/prysmaticlabs/prysm/blob/master/shared/service_registry.go
+
 package services
 
 import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 )
-
-type IServiceConfig interface {
-	GetXXX() string
-}
-
-type ServiceConfig struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
-	Verbose bool   `json:"verbose"`
-}
-
-func (sc *ServiceConfig) GetXXX() string {
-	return sc.Name
-}
-
-// IService is a struct that can be registered into a ServiceRegistry for
-// easy dependency management.
-type IService interface {
-	// Start spawns any goroutines required by the services.
-	Start(context.Context) error
-	// Stop terminates all goroutines belonging to the services,
-	// blocking until they are all terminated.
-	Stop() error
-	// Status Returns error if the services is not considered healthy.
-	Status() error
-	SetRegistry(registry *ServiceRegistry)
-	GetServiceConfig() IServiceConfig
-	Configure()
-	MarkConfigTimestamp()
-	GetKey() string
-	ChangeConfig(config IServiceConfig)
-}
-
-type Service struct {
-	Key             string
-	Registry        *ServiceRegistry
-	Verbose         bool
-	Config          *IServiceConfig
-	ConfigChange    chan IServiceConfig
-	ConfigTimestamp time.Time
-}
-
-func (s *Service) SetRegistry(registry *ServiceRegistry) {
-	s.Registry = registry
-}
-
-func (s *Service) GetServiceConfig() IServiceConfig {
-	if s.Config != nil {
-		return *s.Config
-	}
-	log.Error("Config should never be nil")
-	return nil
-}
-
-func (s *Service) GetKey() string {
-	return s.Key
-}
-
-func (s *Service) ChangeConfig(config IServiceConfig) {
-	log.Infof("%p %s: pushing new config to channel: %#v", s.ConfigChange, s.Key, config)
-	s.ConfigChange <- config
-	log.Infof("pushed")
-}
-
-func (s *Service) MarkConfigTimestamp() {
-	s.ConfigTimestamp = time.Now()
-}
 
 // ServiceRegistry provides a useful pattern for managing services.
 // It allows for ease of dependency management and ensures services
 // dependent on others use the same references in memory.
 type ServiceRegistry struct {
 	services      map[reflect.Type]IService // map of types to services.
-	servicesByKey map[string]*IService      // map of keys to services
+	servicesByKey map[string]IService       // map of keys to services
 	serviceTypes  []reflect.Type            // keep an ordered slice of registered services types.
 }
 
@@ -87,25 +21,25 @@ type ServiceRegistry struct {
 func NewServiceRegistry() *ServiceRegistry {
 	return &ServiceRegistry{
 		services:      make(map[reflect.Type]IService),
-		servicesByKey: make(map[string]*IService),
+		servicesByKey: make(map[string]IService),
 	}
 }
 
-// StartAll initialized each services in order of registration.
+// ConfigureAll initialized each service in order of registration.
 func (s *ServiceRegistry) ConfigureAll() {
-	log.Infof("Configuring %d services: %v", len(s.serviceTypes), s.serviceTypes)
+	log.Infof("Configuring %d services", len(s.serviceTypes))
 	for _, kind := range s.serviceTypes {
 		log.Debugf("TODO Configure services type %v", kind)
-		//go s.services[kind].Configure()
+		s.services[kind].Configure()
 	}
 }
 
-// StartAll initialized each services in order of registration.
+// StartAll initialized each service in order of registration.
 func (s *ServiceRegistry) StartAll(ctx context.Context) {
-	log.Infof("Starting %d services: %v", len(s.serviceTypes), s.serviceTypes)
+	log.Infof("Starting %d services", len(s.serviceTypes))
 	for _, kind := range s.serviceTypes {
-		log.Infof("Starting services type %v", kind)
-		go s.services[kind].Start(ctx)
+		log.Infof("Starting %s", s.services[kind].GetKey())
+		go s.services[kind].Start(ctx) // Start() is blocking call
 	}
 }
 
@@ -121,10 +55,10 @@ func (s *ServiceRegistry) StopAll() {
 	}
 }
 
-// Statuses returns a map of IService type -> error. The map will be populated
+// Statuses returns a map of Service type -> error. The map will be populated
 // with the results of each services.Status() method call.
 func (s *ServiceRegistry) Statuses() map[reflect.Type]error {
-	m := make(map[reflect.Type]error)
+	m := make(map[reflect.Type]error, len(s.serviceTypes))
 	for _, kind := range s.serviceTypes {
 		m[kind] = s.services[kind].Status()
 	}
@@ -142,9 +76,9 @@ func (s *ServiceRegistry) RegisterService(service IService) error {
 		return fmt.Errorf("services already exists: %v", kind)
 	}
 	s.services[kind] = service
-	s.servicesByKey[service.GetKey()] = &service
+	s.servicesByKey[service.GetKey()] = service
 	s.serviceTypes = append(s.serviceTypes, kind)
-	log.Infof("Registered %s", kind.String())
+	log.Infof("Registered %s", service.GetKey())
 	return nil
 }
 
@@ -165,15 +99,15 @@ func (s *ServiceRegistry) FetchService(service interface{}) error {
 
 func (s *ServiceRegistry) NotifyConfigChange(key string, cfg IServiceConfig) error {
 	if running, ok := s.servicesByKey[key]; ok {
-		(*running).ChangeConfig(cfg)
+		running.ChangeConfig(cfg)
 		return nil
 	}
-	return fmt.Errorf("unknown service key: %s", key)
+	return fmt.Errorf("NotifyConfigChange: unknown service %s", key)
 }
 
 func (s *ServiceRegistry) GetCurrentConfig(key string) IServiceConfig {
 	if running, ok := s.servicesByKey[key]; ok {
-		return (*running).GetServiceConfig()
+		return running.GetServiceConfig()
 	}
 	return nil
 }

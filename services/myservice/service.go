@@ -19,6 +19,9 @@ type MyService struct {
 
 func New() *MyService {
 	s := &MyService{}
+	s.Key = "myservice"
+	s.Config = &MyServiceConfig{}
+	s.ConfigChange = make(chan services.IServiceConfig)
 	return s
 }
 

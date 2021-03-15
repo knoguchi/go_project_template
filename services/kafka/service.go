@@ -35,6 +35,7 @@ func New() *KafkaService {
 		Assignor:  "roundrobin",
 	}
 	svc.Key = "kafka"
+	svc.Config = &KafkaServiceConfig{}
 	svc.ConfigChange = make(chan services.IServiceConfig)
 	return svc
 }

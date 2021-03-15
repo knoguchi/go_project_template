@@ -1,19 +1,18 @@
 package configsvc
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"github.com/fsnotify/fsnotify"
 	"github.com/google/go-cmp/cmp"
 	"github.com/knoguchi/go_project_template/services"
-	"io"
 	"io/ioutil"
 	"os"
 )
 
 func New() *ConfigSvc {
 	cfg := &ConfigSvc{}
+	cfg.Config = &ConfigSvcConfig{}
 	cfg.ConfigChange = make(chan services.IServiceConfig)
 	cfg.Key = "config"
 	cfg.JConfig = &JsonConfig{}
@@ -22,7 +21,7 @@ func New() *ConfigSvc {
 }
 
 func (c *ConfigSvc) Configure() {
-	log.Info("implement me")
+	c.LoadConfig(c.GetConfigFilePath())
 }
 
 func (c *ConfigSvc) Start(ctx context.Context) error {
@@ -47,7 +46,7 @@ func (c *ConfigSvc) Start(ctx context.Context) error {
 				//log.Println("event:", event)
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					//log.Println("modified file:", event.Name)
-					newCfg, err := c.ReadConfigFromFile(c.GetConfigFilePath(), false)
+					newCfg, err := c.ReadConfigFromFile(c.GetConfigFilePath())
 					if err != nil {
 						log.Error("can't read config file.  ignoring")
 						// c.Status = "WARNING"
@@ -55,13 +54,13 @@ func (c *ConfigSvc) Start(ctx context.Context) error {
 						// config json is good
 						for key := range newCfg.Services {
 							currentCfg := c.Registry.GetCurrentConfig(key)
-							if key == "webservice" {
+							if diff := cmp.Diff(currentCfg, newCfg.Services[key]); diff != "" {
+								log.Infof("Config for [%s] has changed", key)
 								log.Infof("Current config: %#v", currentCfg)
 								log.Infof("New     config: %#v", newCfg.Services[key])
-							}
-							if diff := cmp.Diff(currentCfg, newCfg.Services[key]); diff != "" {
-								log.Infof("Config for [%s] has changed: %s", key, diff)
-								c.Registry.NotifyConfigChange(key, newCfg.Services[key])
+								if err := c.Registry.NotifyConfigChange(key, newCfg.Services[key]); err != nil {
+									log.Error(err)
+								}
 							}
 						}
 					}
@@ -76,7 +75,6 @@ func (c *ConfigSvc) Start(ctx context.Context) error {
 				return
 			}
 		}
-		log.Error("fs check exit")
 	}()
 
 	log.Info("config service started")
@@ -87,41 +85,28 @@ func (c *ConfigSvc) Status() error {
 	return nil
 }
 func (c *ConfigSvc) Stop() error {
-	c.FsWatcher.Close()
+	if err := c.FsWatcher.Close(); err != nil {
+		return err
+	}
 	log.Info("config service stopped")
 	return nil
 }
 
-/* The purpose of this function is to build a tree of config structs
-Then let json.Marshal to populate
-*/
+// AddService /* The purpose of this function is to build a tree of config structs
 func (c *ConfigSvc) AddService(svc services.IService) {
 	svcCfg := svc.GetServiceConfig()
 	c.JConfig.Services[svc.GetKey()] = svcCfg
 }
 
-// ReadConfig verifies and checks for encryption and loads the config from a JSON object.
-// Prompts for decryption key, if target data is encrypted.
-// Returns the loaded configuration and whether it was encrypted.
-func ReadConfig(configReader io.Reader) (*JsonConfig, error) {
-	reader := bufio.NewReader(configReader)
-
-	// Read unencrypted configuration
-	decoder := json.NewDecoder(reader)
-	c := &JsonConfig{}
-	err := decoder.Decode(c)
-	return c, err
-}
-
 // ReadConfigFromFile reads the configuration from the given file
 // if target file is encrypted, prompts for encryption key
 // Also - if not in dryrun mode - it checks if the configuration needs to be encrypted
-func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (cfg *JsonConfig, err error) {
+func (c *ConfigSvc) ReadConfigFromFile(configPath string) (cfg *JsonConfig, err error) {
 	//defaultPath, _, err := GetFilePath(configPath)
 	//if err != nil {
 	//	return err
 	//}
-	confFile, err := os.Open(c.GetConfigFilePath())
+	confFile, err := os.Open(configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +128,8 @@ func (c *ConfigSvc) ReadConfigFromFile(configPath string, dryrun bool) (cfg *Jso
 }
 
 // LoadConfig loads your configuration file into your configuration object
-func (c *ConfigSvc) LoadConfig(configPath string, dryrun bool) error {
-	cfg, err := c.ReadConfigFromFile(configPath, dryrun)
+func (c *ConfigSvc) LoadConfig(configPath string) error {
+	cfg, err := c.ReadConfigFromFile(configPath)
 	if err != nil {
 		log.Errorf(ErrFailureOpeningConfig, configPath, err)
 		return err

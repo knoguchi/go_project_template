@@ -5,6 +5,8 @@ import (
 	"github.com/knoguchi/go_project_template/services"
 	"github.com/knoguchi/go_project_template/services/configsvc"
 	"github.com/knoguchi/go_project_template/services/database"
+	"github.com/knoguchi/go_project_template/services/kafka"
+	"github.com/knoguchi/go_project_template/services/myservice"
 	"github.com/knoguchi/go_project_template/services/webservice"
 	"github.com/knoguchi/go_project_template/version"
 	"github.com/sirupsen/logrus"
@@ -96,6 +98,7 @@ func (app *Application) registerServices() (err error) {
 	cfgsvc := configsvc.New()
 	err = app.registry.RegisterService(cfgsvc)
 	if err != nil {
+		panic(err)
 		return
 	}
 	cfgsvc.AddService(cfgsvc)
@@ -103,25 +106,24 @@ func (app *Application) registerServices() (err error) {
 	websvc := webservice.New()
 	err = app.registry.RegisterService(websvc)
 	if err != nil {
+		panic(err)
 		return
 	}
 	cfgsvc.AddService(websvc)
 
-	//mysvc := myservice.New()
-	//err = app.registry.RegisterService(mysvc)
-	//if err != nil {
-	//	return
-	//}
-	//cfgsvc.AddServiceConfig(mysvc.GetServiceConfig())
+	mysvc := myservice.New()
+	err = app.registry.RegisterService(mysvc)
+	if err != nil {
+		return
+	}
+	cfgsvc.AddService(mysvc)
 
-	//kafkasvc := kafka.New()
-	//err = app.registry.RegisterService(kafkasvc)
-	//if err != nil {
-	//	return err
-	//}
-	//cfgsvc.AddServiceConfig(kafkasvc.GetServiceConfig())
-
-	cfgsvc.LoadConfig("./config.json", false)
+	kafkasvc := kafka.New()
+	err = app.registry.RegisterService(kafkasvc)
+	if err != nil {
+		return err
+	}
+	cfgsvc.AddService(kafkasvc)
 
 	return nil
 }
