@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/knoguchi/go_project_template/services"
 	"github.com/knoguchi/go_project_template/services/myservice"
+	"github.com/toorop/gin-logrus"
 	"net/http"
 )
 
@@ -27,8 +28,10 @@ func handleRoot(c *gin.Context) {
 }
 func router01(reg *services.ServiceRegistry) http.Handler {
 	registry = reg
+	gin.SetMode(gin.ReleaseMode)
 	e := gin.New()
-	e.Use(gin.Recovery())
+	// TODO: web accesslog shouldn't use application logger
+	e.Use(ginlogrus.Logger(log), gin.Recovery())
 	e.GET("/", handleRoot)
 
 	return e

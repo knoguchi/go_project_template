@@ -105,14 +105,21 @@ func startMyCmd(cliCtx *cli.Context) error {
 	}
 	logrus.SetLevel(level)
 
-	app, err := myapp.New()
+	// bootstrap configs
+	configPath := cliCtx.String(cmd.ConfigFileFlag.FilePath)
+
+
+	app, err := myapp.New(configPath)
 	if err != nil {
 		return err
 	}
 
+	// do not pass around cliCtx after this point
+	ctx, cancel := context.WithCancel(cliCtx.Context)
 	// setup errgroup
-	g, gctx := errgroup.WithContext(cliCtx.Context)
+	g, gctx := errgroup.WithContext(ctx)
 
+	// signal handling
 	g.Go(func() error {
 		// setup signal
 		sigCh := make(chan os.Signal, 1)
@@ -130,23 +137,23 @@ func startMyCmd(cliCtx *cli.Context) error {
 			log.Info("sig: gctx done")
 			return gctx.Err()
 		case <-sigCh:
+			cancel()
 			log.Info("sig: signal arrived")
+			return gctx.Err()
 		}
 		return nil
 	})
 
 	// start myapp
-	g.Go(func() error {
-		return app.Start(gctx)
-	})
+	app.Start(gctx)
 
 	// wait for all errgroup goroutines
 	err = g.Wait()
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			log.Info("startup: context was canceled")
+			log.Info("context was canceled")
 		} else {
-			log.Error("startup: received error: %v", err)
+			log.Error("received error: %v", err)
 		}
 	} else {
 		log.Infoln("startup: finished clean")

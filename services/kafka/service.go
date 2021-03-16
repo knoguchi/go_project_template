@@ -36,7 +36,7 @@ func New() *KafkaService {
 	}
 	svc.Key = "kafka"
 	svc.Config = &KafkaServiceConfig{}
-	svc.ConfigChange = make(chan services.IServiceConfig)
+	svc.ConfigChange = make(chan services.IServiceConfig, 100)
 	return svc
 }
 
@@ -57,6 +57,9 @@ func (k *KafkaService) Start(ctx context.Context) error {
 				log.Infof("got config change notification: %v", newCfg)
 				k.Config = &newCfg
 				k.MarkConfigTimestamp()
+			case <- ctx.Done():
+				log.Info("ctx done")
+				return gctx.Err()
 			case <-gctx.Done():
 				log.Info("kafka shutting down")
 				return gctx.Err()
@@ -71,6 +74,7 @@ func (k *KafkaService) Start(ctx context.Context) error {
 
 	version, err := sarama.ParseKafkaVersion(k.Version)
 	if err != nil {
+		gctx.Done()
 		log.Errorf("Error parsing Kafka version: %v", err)
 		return err
 	}

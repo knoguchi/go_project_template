@@ -35,16 +35,22 @@ func (s *ServiceRegistry) ConfigureAll() {
 }
 
 // StartAll initialized each service in order of registration.
-func (s *ServiceRegistry) StartAll(ctx context.Context) {
+func (s *ServiceRegistry) StartAll(ctx context.Context) error {
 	log.Infof("Starting %d services", len(s.serviceTypes))
 	for _, kind := range s.serviceTypes {
 		log.Infof("Starting %s", s.services[kind].GetKey())
-		go s.services[kind].Start(ctx) // Start() is blocking call
+		err := s.services[kind].Start(ctx)
+		if err != nil {
+			log.Infof("%s couldn't start: %v", s.services[kind].GetKey(), err)
+			return err
+		}
 	}
+	return nil
 }
 
 // StopAll ends every services in reverse order of registration, logging a
 // panic if any of them fail to stop.
+// Note: stop is nothing to do with ctx
 func (s *ServiceRegistry) StopAll() {
 	for i := len(s.serviceTypes) - 1; i >= 0; i-- {
 		kind := s.serviceTypes[i]

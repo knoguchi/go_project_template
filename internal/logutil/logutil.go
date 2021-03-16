@@ -1,7 +1,7 @@
 package logutil
 
 import (
-	"github.com/knoguchi/go_project_template/config"
+	"github.com/knoguchi/go_project_template/internal/config"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"

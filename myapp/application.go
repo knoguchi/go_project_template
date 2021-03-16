@@ -10,11 +10,7 @@ import (
 	"github.com/knoguchi/go_project_template/services/webservice"
 	"github.com/knoguchi/go_project_template/version"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 )
 
 type Application struct {
@@ -24,9 +20,10 @@ type Application struct {
 }
 
 // New starts a new myapp
-func New() (*Application, error) {
+func New(configPath string) (*Application, error) {
 	registry := services.NewServiceRegistry()
 	app := &Application{
+
 		registry: registry,
 	}
 
@@ -39,7 +36,7 @@ func New() (*Application, error) {
 	return app, nil
 }
 
-func (app *Application) Start(ctx context.Context) error {
+func (app *Application) Start(parentCtx context.Context) error {
 
 	// use config service, and setup tracing.  that way cliCtx is not necessary
 	//if err := tracing.Setup(
@@ -52,33 +49,18 @@ func (app *Application) Start(ctx context.Context) error {
 	//	return err
 	//}
 
-	g, gctx := errgroup.WithContext(ctx)
-
-	// goroutine to check for signals to gracefully finish all functions
-	g.Go(func() error {
-		signalChannel := make(chan os.Signal, 1)
-		signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
-
-		select {
-		case sig := <-signalChannel:
-			log.Info("Received signal: %s\n", sig)
-			gctx.Done()
-		case <-gctx.Done():
-			log.Info("closing signal goroutine\n")
-			return gctx.Err()
-		}
-
-		return nil
-	})
-
+	ctx, cancel := context.WithCancel(parentCtx)
 	// ---- main stuff
 	app.lock.Lock()
-	app.registry.StartAll(gctx)
+	err := app.registry.StartAll(ctx)
 	app.lock.Unlock()
-
-	log.WithFields(logrus.Fields{"version": version.Version}).Info("Starting app")
-
-	return g.Wait()
+	if err != nil {
+		log.Errorf("Startup failed: %v", err)
+		cancel()
+		return err
+	}
+	log.WithFields(logrus.Fields{"version": version.Version}).Info("Started")
+	return nil
 }
 
 //// Close handles graceful shutdown of the system.

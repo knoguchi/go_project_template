@@ -47,9 +47,9 @@ func (ws *WebService) Start(ctx context.Context) error {
 				ws.Config = &newCfg
 				ws.MarkConfigTimestamp()
 			case <-gctx.Done():
-				log.Info("webservice shutting down")
+				log.Info("ctx done")
 				if err := srv.Shutdown(ctx); err != nil {
-					log.Fatal("Server forced to shutdown:", err)
+					log.Infof("Server forced to shutdown: %v", err)
 					return gctx.Err()
 				}
 				return nil
@@ -57,8 +57,18 @@ func (ws *WebService) Start(ctx context.Context) error {
 		}
 	})
 
+	// this is bad
+	go func() {
+		err := g.Wait()
+		if err != nil {
+			log.Infof("webservice error: %v", err)
+			return
+		}
+		return
+	}()
+
 	log.Info("webservice started")
-	return g.Wait()
+	return nil
 }
 
 //func (ws *WebService) GetName() string {
